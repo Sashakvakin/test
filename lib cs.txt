@@ -1,0 +1,69 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace library
+{
+    /// <summary>
+    /// Логика взаимодействия для MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private string connectionString = @"Data Source=ban\SQLEXPRESS;Initial Catalog=library;User ID=user05;Password=111111;";
+        public MainWindow()
+        {
+            InitializeComponent();
+            ReaderPartnersData();
+        }
+        private void ReaderPartnersData()
+        {
+            DataTable dataTable = new DataTable();
+
+            string query = @"
+                SELECT
+                r.full_name AS [ФИО],
+                r.library_card_number AS [Номер читательского билета],
+                COUNT(l.id_loan) AS [Количество книг на руках]
+            FROM
+                dbo.Readers r
+            LEFT JOIN
+                dbo.Loans l ON r.id_reader = l.id_reader AND l.return_date IS NULL
+            GROUP BY
+                r.id_reader,
+                r.full_name,
+                r.library_card_number
+            ORDER BY
+                [ФИО];
+
+            ";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    SqlDataAdapter dataAdapter = new SqlDataAdapter(query, connection);
+                    dataAdapter.Fill(dataTable);
+                    ReaderDataGrid.ItemsSource = dataTable.DefaultView;
+                }
+            }
+            catch (SqlException ex)
+            {
+                MessageBox.Show($"Ошибка SQL при загрузке данных: {ex.Message}", "Ошибка Базы Данных", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+    }
+}
