@@ -1,0 +1,52 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Windows;
+
+namespace MasterPol
+{
+    public partial class MainWindow : Window
+    {
+        private string connectionString = @"Data Source=ban\SQLEXPRESS;Initial Catalog=МастерПолБД;User ID=user05;Password=111111;";
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadPartnersData();
+        }
+
+        private void LoadPartnersData()
+        {
+            DataTable dataTable = new DataTable();
+
+            string query = @"
+                SELECT
+                    тп.наименование_типа AS [Тип],
+                    п.наименование_компании AS [Название компании],
+                    п.фио_директора AS [Директор],
+                    п.контактный_телефон AS [Телефон],
+                    п.контактный_email AS [Email],
+                    п.рейтинг AS [Рейтинг]
+                FROM
+                    dbo.Партнеры п
+                JOIN
+                    dbo.Типы_партнеров тп ON п.id_типа_партнера = тп.id_типа_партнера
+            ";
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    SqlDataAdapter dataAdapter = new SqlDataAdapter(query, connection);
+                    dataAdapter.Fill(dataTable);
+                    PartnersDataGrid.ItemsSource = dataTable.DefaultView;
+                }
+            }
+            catch (SqlException ex)
+            {
+                MessageBox.Show($"Ошибка SQL при загрузке данных: {ex.Message}", "Ошибка Базы Данных", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+    }
+}
